@@ -674,16 +674,19 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
                     <span className="font-medium text-foreground">corporate partner</span>, or ecosystem organization interested in speaking with
                     this company:
                   </p>
-                  <Button
-                    className="w-full rounded-2xl"
-                    onClick={() => {
-                      setSent(false);
-                      setOpen(true);
-                    }}
-                  >
-                    Request an Introduction
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                        <Button
+                            className="w-full rounded-2xl"
+                            onClick={() =>
+                                window.open(https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog
+                                "ここにGoogle FormのURLを貼る",
+                                "_blank"
+                                )
+                            }
+                            >
+                            Request an Introduction
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+
                   <p className="text-xs text-muted-foreground">
                     Japan Startup Atlas acts as a neutral gateway to validate fit, bridge language/cultural gaps, and coordinate a productive first
                     call.
