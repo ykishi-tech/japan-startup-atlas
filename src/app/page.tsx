@@ -34,7 +34,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 // TODO: Paste your Google Form URL here
-const INTRO_GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog";
+const INTRO_GOOGLE_FORM_URL: string = "https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog";
 
 /**
  * Japan Startup Atlas — Directory + Company Profile (single-file preview)
