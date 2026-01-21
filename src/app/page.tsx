@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Building2,
   Calendar,
@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Users,
   Layers,
-  X,
   ArrowRight,
   Search,
   Filter,
@@ -23,24 +22,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
-// TODO: Paste your Google Form URL here
-const INTRO_GOOGLE_FORM_URL: string = "https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog";
+/**
+ * Google Form URL (recommended to manage via Vercel Env Var)
+ * - Local: set in `.env.local`
+ * - Vercel: set in Project Settings → Environment Variables
+ */
+const INTRO_GOOGLE_FORM_URL = process.env.NEXT_PUBLIC_INTRO_GOOGLE_FORM_URL ?? "";
 
 /**
  * Japan Startup Atlas — Directory + Company Profile (single-file preview)
  *
  * Option 1 “pseudo file split”:
- * This is still 1 file for Canvas preview, but organized so a developer can
+ * This is still 1 file for a quick MVP, but organized so a developer can
  * copy/paste into real files later.
  */
 
@@ -101,7 +96,6 @@ const readinessMeta: Record<Readiness, { label: string; emoji: string; hint: str
 // file: data/companies.sample.ts
 // -----------------------------------------------------------------------------
 
-// Sample dataset (fictional)
 const companies: Company[] = [
   {
     id: "sustainable-lab",
@@ -316,7 +310,6 @@ function filterCompanies(xs: Company[], params: FilterParams): Company[] {
 
   if (params.sort === "name") out = out.slice().sort((a, b) => a.name_en.localeCompare(b.name_en));
   if (params.sort === "founded_desc") out = out.slice().sort((a, b) => b.founded - a.founded);
-  // "relevance" keeps input order for now (later: scoring)
 
   return out;
 }
@@ -334,8 +327,6 @@ function getAllStages(xs: Company[]): string[] {
 }
 
 function parseMonthYear(s: string): number {
-  // Accepts formats like "Jan 2026" (used in this preview)
-  // Returns a sortable number: YYYYMM
   const m: Record<string, number> = {
     jan: 1,
     feb: 2,
@@ -446,18 +437,17 @@ function DirectoryCard({ c, onOpen }: { c: Company; onOpen: (id: string) => void
 // -----------------------------------------------------------------------------
 
 function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string>("");
-
-  // Intro request form state (client-side)
-  const [introName, setIntroName] = useState("");
-  const [introEmail, setIntroEmail] = useState("");
-  const [introOrg, setIntroOrg] = useState("");
-  const [introType, setIntroType] = useState("");
-  const [introMsg, setIntroMsg] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const meta = useMemo(() => readinessMeta[company.readiness], [company.readiness]);
+
+  const openIntroForm = () => {
+    if (!INTRO_GOOGLE_FORM_URL) {
+      alert(
+        "Google Form URL is not configured.\n\nSet NEXT_PUBLIC_INTRO_GOOGLE_FORM_URL in Vercel Environment Variables (and redeploy)."
+      );
+      return;
+    }
+    window.open(INTRO_GOOGLE_FORM_URL, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -686,22 +676,12 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
                     <span className="font-medium text-foreground">corporate partner</span>, or ecosystem organization interested in speaking with
                     this company:
                   </p>
-                  <Button
-                    className="w-full rounded-2xl"
-                    onClick={() => {
-                      // Google Form flow (recommended for solo 운영)
-                      if (INTRO_GOOGLE_FORM_URL === "PASTE_GOOGLE_FORM_URL_HERE") {
-                        alert("Please set INTRO_GOOGLE_FORM_URL in src/app/page.tsx");
-                        return;
-                      }
-                      window.open(INTRO_GOOGLE_FORM_URL, "_blank", "noopener,noreferrer");
-                    }}
-                  >
+                  <Button className="w-full rounded-2xl" onClick={openIntroForm}>
                     Request an Introduction
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    Japan Startup Atlas acts as a neutral gateway to validate fit, bridge language/cultural gaps, and coordinate a productive first
+                    Japan Startup Atlas acts as a neutral gateway to validate fit: bridge language/cultural gaps and coordinate a productive first
                     call.
                   </p>
                   <div className="rounded-xl border bg-muted/30 p-3 text-xs text-muted-foreground">
@@ -724,196 +704,6 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
           </div>
         </div>
       </div>
-
-      {/* Intro Request Modal */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-[640px]">
-          <DialogHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <DialogTitle className="text-xl">Request an Introduction</DialogTitle>
-                <DialogDescription>
-                  Share a few details so we can validate fit and set up a productive first conversation.
-                </DialogDescription>
-              </div>
-              <Button variant="ghost" className="rounded-2xl" onClick={() => setOpen(false)} aria-label="Close">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-
-          <AnimatePresence mode="wait">
-            {!sent ? (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div className="rounded-2xl border bg-muted/30 p-4">
-                  <div className="text-sm font-medium">Company</div>
-                  <div className="text-sm text-muted-foreground">
-                    {company.name_en}
-                    {company.name_jp ? ` (${company.name_jp})` : ""}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Your name</div>
-                    <Input
-                      value={introName}
-                      onChange={(e) => setIntroName(e.target.value)}
-                      placeholder="Jane Doe"
-                      className="rounded-2xl"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Work email</div>
-                    <Input
-                      value={introEmail}
-                      onChange={(e) => setIntroEmail(e.target.value)}
-                      placeholder="jane@fund.com"
-                      className="rounded-2xl"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Organization</div>
-                    <Input
-                      value={introOrg}
-                      onChange={(e) => setIntroOrg(e.target.value)}
-                      placeholder="Fund / Company"
-                      className="rounded-2xl"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Interest type</div>
-                    <Input
-                      value={introType}
-                      onChange={(e) => setIntroType(e.target.value)}
-                      placeholder="Investment / Partnership / Media"
-                      className="rounded-2xl"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">What are you looking to discuss?</div>
-                  <Textarea
-                    value={introMsg}
-                    onChange={(e) => setIntroMsg(e.target.value)}
-                    placeholder="2–3 sentences: your thesis, why this company, and what you want to explore."
-                    className="min-h-[120px] rounded-2xl"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                  <Button variant="outline" className="rounded-2xl" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    className="rounded-2xl"
-                    disabled={isSubmitting}
-                    onClick={async () => {
-                      setErrorMsg("");
-
-                      // Basic validation
-                      if (!introName.trim() || !introEmail.trim() || !introMsg.trim()) {
-                        setErrorMsg("Please fill in your name, work email, and a short message.");
-                        return;
-                      }
-
-                      const endpoint = process.env.NEXT_PUBLIC_INTRO_REQUEST_ENDPOINT;
-                      if (!endpoint) {
-                        setErrorMsg(
-                          "Intro requests are not configured yet. Set NEXT_PUBLIC_INTRO_REQUEST_ENDPOINT in Vercel Environment Variables."
-                        );
-                        return;
-                      }
-
-                      try {
-                        setIsSubmitting(true);
-                        const res = await fetch(endpoint, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            companyId: company.id,
-                            companyName: `${company.name_en}${company.name_jp ? ` (${company.name_jp})` : ""}`,
-                            name: introName,
-                            email: introEmail,
-                            organization: introOrg,
-                            interestType: introType,
-                            message: introMsg,
-                            pageUrl: typeof window !== "undefined" ? window.location.href : "",
-                            submittedAt: new Date().toISOString(),
-                          }),
-                        });
-
-                        if (!res.ok) {
-                          const text = await res.text();
-                          throw new Error(text || `Request failed (${res.status})`);
-                        }
-
-                        setSent(true);
-                      } catch (e: any) {
-                        setErrorMsg(
-                          "Sorry—something went wrong while submitting your request. Please try again, or email us directly."
-                        );
-                        // eslint-disable-next-line no-console
-                        console.error(e);
-                      } finally {
-                        setIsSubmitting(false);
-                      }
-                    }}
-                  >
-                    {isSubmitting ? "Submitting…" : "Submit request"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                  {errorMsg ? (
-                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-foreground">
-                    {errorMsg}
-                  </div>
-                ) : null}
-
-                <div className="text-xs text-muted-foreground">
-                  By submitting, you agree that Japan Startup Atlas / YKBridge may contact you to coordinate an introduction. We do not guarantee
-                  introductions.
-                </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div className="rounded-2xl border bg-muted/30 p-5">
-                  <div className="text-base font-semibold">Request received</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    We’ll review fit and respond with suggested next steps for an initial call.
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button className="rounded-2xl" onClick={() => setOpen(false)}>
-                    Close
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </DialogContent>
-      </Dialog>
 
       {/* Footer */}
       <div className="border-t bg-background">
@@ -1109,7 +899,11 @@ function DirectoryPage({
           </div>
           <div className="md:col-span-5">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button variant={sort === "relevance" ? "default" : "outline"} className="rounded-2xl" onClick={() => setSort("relevance")}>
+              <Button
+                variant={sort === "relevance" ? "default" : "outline"}
+                className="rounded-2xl"
+                onClick={() => setSort("relevance")}
+              >
                 <ArrowUpDown className="mr-2 h-4 w-4" />
                 Relevance
               </Button>
@@ -1244,21 +1038,4 @@ function DirectoryPage({
 // file: app/page.tsx (single-file preview root)
 // -----------------------------------------------------------------------------
 
-export default function JapanStartupAtlasPreview() {
-  const [view, setView] = useState<"directory" | "profile">("directory");
-  const [selectedId, setSelectedId] = useState<string>(companies[0]?.id ?? "");
-
-  const selected = useMemo(() => companies.find((c) => c.id === selectedId) ?? companies[0], [selectedId]);
-
-  const openProfile = (id: string) => {
-    setSelectedId(id);
-    setView("profile");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  if (view === "profile" && selected) {
-    return <CompanyProfilePage company={selected} onBack={() => setView("directory")} />;
-  }
-
-  return <DirectoryPage companies={companies} onOpenProfile={openProfile} />;
-}
+export default function JapanStartup
