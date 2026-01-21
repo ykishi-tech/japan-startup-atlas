@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
+// TODO: Paste your Google Form URL here
+const INTRO_GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog";
+
 /**
  * Japan Startup Atlas — Directory + Company Profile (single-file preview)
  *
@@ -445,6 +448,15 @@ function DirectoryCard({ c, onOpen }: { c: Company; onOpen: (id: string) => void
 function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () => void }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
+  // Intro request form state (client-side)
+  const [introName, setIntroName] = useState("");
+  const [introEmail, setIntroEmail] = useState("");
+  const [introOrg, setIntroOrg] = useState("");
+  const [introType, setIntroType] = useState("");
+  const [introMsg, setIntroMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const meta = useMemo(() => readinessMeta[company.readiness], [company.readiness]);
 
   return (
@@ -674,19 +686,20 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
                     <span className="font-medium text-foreground">corporate partner</span>, or ecosystem organization interested in speaking with
                     this company:
                   </p>
-                        <Button
-                            className="w-full rounded-2xl"
-                            onClick={() =>
-                                window.open(https://docs.google.com/forms/d/e/1FAIpQLScF-Oyvg6Tkh9DPMdPSy7oG6RnFq2r-0Y4vXDo16Q4DsBWRZg/viewform?usp=dialog
-                                "ここにGoogle FormのURLを貼る",
-                                "_blank"
-                                )
-                            }
-                            >
-                            Request an Introduction
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-
+                  <Button
+                    className="w-full rounded-2xl"
+                    onClick={() => {
+                      // Google Form flow (recommended for solo 운영)
+                      if (INTRO_GOOGLE_FORM_URL === "PASTE_GOOGLE_FORM_URL_HERE") {
+                        alert("Please set INTRO_GOOGLE_FORM_URL in src/app/page.tsx");
+                        return;
+                      }
+                      window.open(INTRO_GOOGLE_FORM_URL, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    Request an Introduction
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                   <p className="text-xs text-muted-foreground">
                     Japan Startup Atlas acts as a neutral gateway to validate fit, bridge language/cultural gaps, and coordinate a productive first
                     call.
@@ -750,28 +763,50 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Your name</div>
-                    <Input placeholder="Jane Doe" className="rounded-2xl" />
+                    <Input
+                      value={introName}
+                      onChange={(e) => setIntroName(e.target.value)}
+                      placeholder="Jane Doe"
+                      className="rounded-2xl"
+                    />
                   </div>
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Work email</div>
-                    <Input placeholder="jane@fund.com" className="rounded-2xl" />
+                    <Input
+                      value={introEmail}
+                      onChange={(e) => setIntroEmail(e.target.value)}
+                      placeholder="jane@fund.com"
+                      className="rounded-2xl"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Organization</div>
-                    <Input placeholder="Fund / Company" className="rounded-2xl" />
+                    <Input
+                      value={introOrg}
+                      onChange={(e) => setIntroOrg(e.target.value)}
+                      placeholder="Fund / Company"
+                      className="rounded-2xl"
+                    />
                   </div>
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Interest type</div>
-                    <Input placeholder="Investment / Partnership / Media" className="rounded-2xl" />
+                    <Input
+                      value={introType}
+                      onChange={(e) => setIntroType(e.target.value)}
+                      placeholder="Investment / Partnership / Media"
+                      className="rounded-2xl"
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-sm font-medium">What are you looking to discuss?</div>
                   <Textarea
+                    value={introMsg}
+                    onChange={(e) => setIntroMsg(e.target.value)}
                     placeholder="2–3 sentences: your thesis, why this company, and what you want to explore."
                     className="min-h-[120px] rounded-2xl"
                   />
@@ -783,19 +818,75 @@ function CompanyProfilePage({ company, onBack }: { company: Company; onBack: () 
                   </Button>
                   <Button
                     className="rounded-2xl"
-                    onClick={() => {
-                      // Mock submission
-                      setSent(true);
+                    disabled={isSubmitting}
+                    onClick={async () => {
+                      setErrorMsg("");
+
+                      // Basic validation
+                      if (!introName.trim() || !introEmail.trim() || !introMsg.trim()) {
+                        setErrorMsg("Please fill in your name, work email, and a short message.");
+                        return;
+                      }
+
+                      const endpoint = process.env.NEXT_PUBLIC_INTRO_REQUEST_ENDPOINT;
+                      if (!endpoint) {
+                        setErrorMsg(
+                          "Intro requests are not configured yet. Set NEXT_PUBLIC_INTRO_REQUEST_ENDPOINT in Vercel Environment Variables."
+                        );
+                        return;
+                      }
+
+                      try {
+                        setIsSubmitting(true);
+                        const res = await fetch(endpoint, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            companyId: company.id,
+                            companyName: `${company.name_en}${company.name_jp ? ` (${company.name_jp})` : ""}`,
+                            name: introName,
+                            email: introEmail,
+                            organization: introOrg,
+                            interestType: introType,
+                            message: introMsg,
+                            pageUrl: typeof window !== "undefined" ? window.location.href : "",
+                            submittedAt: new Date().toISOString(),
+                          }),
+                        });
+
+                        if (!res.ok) {
+                          const text = await res.text();
+                          throw new Error(text || `Request failed (${res.status})`);
+                        }
+
+                        setSent(true);
+                      } catch (e: any) {
+                        setErrorMsg(
+                          "Sorry—something went wrong while submitting your request. Please try again, or email us directly."
+                        );
+                        // eslint-disable-next-line no-console
+                        console.error(e);
+                      } finally {
+                        setIsSubmitting(false);
+                      }
                     }}
                   >
-                    Submit request
+                    {isSubmitting ? "Submitting…" : "Submit request"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
 
                 <div className="text-xs text-muted-foreground">
+                  {errorMsg ? (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-foreground">
+                    {errorMsg}
+                  </div>
+                ) : null}
+
+                <div className="text-xs text-muted-foreground">
                   By submitting, you agree that Japan Startup Atlas / YKBridge may contact you to coordinate an introduction. We do not guarantee
                   introductions.
+                </div>
                 </div>
               </motion.div>
             ) : (
