@@ -1,6 +1,6 @@
 # Database setup (PostgreSQL)
 
-This project now includes a PostgreSQL schema designed for an initial dataset of ~50 startups and growth to 10,000+ rows.
+This project now includes a PostgreSQL schema designed for an initial curated dataset of 10 startups and growth to 10,000+ rows.
 
 ## Start DB locally
 
@@ -24,7 +24,7 @@ Connection URL:
 postgresql://startup_atlas:startup_atlas@localhost:5432/startup_atlas
 ```
 
-## Verify seed (50 startups)
+## Verify seed (10 startups)
 
 ```bash
 docker exec -it japan-startup-atlas-db psql -U startup_atlas -d startup_atlas -c "SELECT COUNT(*) FROM startups;"
@@ -38,6 +38,7 @@ Use CSV and provide one row per company.
 2. Keep the same header columns/order.
 3. Use `|` to separate tags (example: `AI|SaaS|B2B`).
 4. `readiness` must be one of: `green`, `yellow`, `red`.
+5. If funding stage is not confirmed, use `Unknown` (avoid freeform placeholders like `TBD`).
 
 Required columns:
 

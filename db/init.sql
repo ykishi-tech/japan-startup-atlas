@@ -1,9 +1,15 @@
 -- Japan Startup Atlas initial PostgreSQL schema + seed data
--- Target scale: start with ~50 companies, then grow to 10,000+
+-- Target scale: start with curated records, then grow to 10,000+
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TYPE readiness_level AS ENUM ('green', 'yellow', 'red');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'readiness_level') THEN
+    CREATE TYPE readiness_level AS ENUM ('green', 'yellow', 'red');
+  END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS startups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,7 +52,7 @@ BEFORE UPDATE ON startups
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
--- seed only if empty
+-- Seed only when table is empty.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM startups LIMIT 1) THEN
@@ -69,52 +75,16 @@ BEGIN
     readiness,
     description
   )
-  SELECT
-    lower(replace(company_name, ' ', '-')) AS slug,
-    company_name AS name_en,
-    jp_name AS name_jp,
-    one_liner,
-    tag_set,
-    founded_year,
-    city,
-    prefecture,
-    funding_stage,
-    funding,
-    website,
-    readiness::readiness_level,
-    description
-  FROM (
-    SELECT
-      gs,
-      (ARRAY['Atlas', 'Mirai', 'Sora', 'Kizuna', 'Nami', 'Hikari', 'Kumo', 'Sakura', 'Tsubasa', 'Zen',
-             'Aozora', 'Shin', 'Neo', 'Kokoro', 'Asa', 'Kibo', 'Nexus', 'Raku', 'Terra', 'Flux'])[1 + ((gs - 1) % 20)] || ' ' ||
-      (ARRAY['AI', 'Health', 'Fin', 'Logi', 'Agri', 'Climate', 'Robot', 'Bio', 'Energy', 'Data',
-             'Retail', 'Mobility', 'Cloud', 'Factory', 'Ocean', 'Space', 'Carbon', 'Legal', 'Gov', 'Media'])[1 + (((gs - 1) / 20)::int)]
-      AS company_name,
-      'スタートアップ' || gs::text AS jp_name,
-      (ARRAY[
-        'Builds AI-first workflow tools for Japanese enterprises.',
-        'Provides vertical SaaS for cross-border growth from Japan.',
-        'Helps companies digitize operations and reduce manual work.',
-        'Uses data and automation to improve business performance.',
-        'Develops climate-aware products for industrial customers.'
-      ])[1 + ((gs - 1) % 5)] AS one_liner,
-      (ARRAY[
-        ARRAY['AI','SaaS','B2B'],
-        ARRAY['Fintech','SME','Payments'],
-        ARRAY['Climate','Analytics','Enterprise'],
-        ARRAY['Healthcare','Data','Platform'],
-        ARRAY['Manufacturing','Automation','B2B']
-      ])[1 + ((gs - 1) % 5)] AS tag_set,
-      2012 + ((gs - 1) % 13) AS founded_year,
-      (ARRAY['Tokyo','Osaka','Nagoya','Fukuoka','Sapporo','Kyoto','Kobe','Yokohama','Sendai','Hiroshima'])[1 + ((gs - 1) % 10)] AS city,
-      (ARRAY['Tokyo','Osaka','Aichi','Fukuoka','Hokkaido','Kyoto','Hyogo','Kanagawa','Miyagi','Hiroshima'])[1 + ((gs - 1) % 10)] AS prefecture,
-      (ARRAY['Pre-Seed','Seed','Series A','Series B','Series C'])[1 + ((gs - 1) % 5)] AS funding_stage,
-      round((3 + (gs * 1.7))::numeric, 2) AS funding,
-      'https://example-startup-' || gs::text || '.com' AS website,
-      (ARRAY['yellow','green','red'])[1 + ((gs - 1) % 3)] AS readiness,
-      'Profile seeded for Japan Startup Atlas. Company #' || gs::text || ' placeholder record for schema and query validation.' AS description
-    FROM generate_series(1, 50) AS gs
-  ) generated;
+  VALUES
+    ('preferred-networks', 'Preferred Networks', '株式会社Preferred Networks', 'Deep learning and robotics company building AI solutions for industry.', ARRAY['AI','Robotics','DeepTech','Manufacturing'], 2014, 'Tokyo', 'Tokyo', 'Unknown', NULL, 'https://www.preferred.jp/en/', 'yellow', 'Preferred Networks develops deep learning technologies and applies them to robotics and industrial use cases in Japan.'),
+    ('sakana-ai', 'Sakana AI', 'Sakana AI株式会社', 'Nature-inspired AI R&D company building next-generation foundation model research.', ARRAY['AI','Foundation-Models','R&D','DeepTech'], 2023, 'Tokyo', 'Tokyo', 'Seed', 30, 'https://sakana.ai/', 'green', 'Sakana AI is a Tokyo-based AI R&D company focused on nature-inspired approaches to foundation models and applied AI solutions.'),
+    ('ubie', 'Ubie', 'Ubie株式会社', 'AI healthtech helping patients and clinicians navigate to the right care faster.', ARRAY['Healthcare','AI','Digital-Health','B2B2C'], 2017, 'Tokyo', 'Tokyo', 'Unknown', NULL, 'https://ubiehealth.com/', 'green', 'Ubie develops AI-powered products such as symptom assessment and clinical support tools to guide patients to appropriate care and improve healthcare workflows.'),
+    ('asuene', 'ASUENE', 'アスエネ株式会社', 'Climate SaaS for measuring and reducing corporate greenhouse gas emissions.', ARRAY['Climate','SaaS','Carbon-Accounting','ESG'], 2019, 'Tokyo', 'Tokyo', 'Unknown', NULL, 'https://asuene.com/en', 'green', 'ASUENE provides a climate platform for GHG accounting and decarbonization support including ESG-related services for enterprises.'),
+    ('abeja', 'ABEJA', '株式会社ABEJA', 'AI platform and solutions provider supporting enterprise DX and analytics.', ARRAY['AI','Enterprise','SaaS','DX'], 2012, 'Tokyo', 'Tokyo', 'Public', NULL, 'https://www.abejainc.com/en/', 'green', 'ABEJA provides AI-driven platforms and solutions to help enterprises accelerate digital transformation and deploy AI in production.'),
+    ('smarthr', 'SmartHR', '株式会社SmartHR', 'Cloud HR and labor-management software for back-office operations in Japan.', ARRAY['Enterprise-SaaS','HR-Tech','B2B'], 2013, 'Tokyo', 'Tokyo', 'Unknown', NULL, 'https://smarthr.co.jp/en/', 'green', 'SmartHR provides cloud software that simplifies HR and labor administration for companies operating in Japan.'),
+    ('money-forward', 'Money Forward', '株式会社マネーフォワード', 'Fintech platform offering personal finance and cloud services for businesses.', ARRAY['Fintech','SaaS','Accounting','SMB'], 2012, 'Tokyo', 'Tokyo', 'Public', NULL, 'https://corp.moneyforward.com/en/', 'green', 'Money Forward operates fintech services spanning personal finance management and business cloud products including accounting and related back-office tools.'),
+    ('spiber', 'Spiber', 'Spiber株式会社', 'Bio-based materials company developing brewed structural proteins for sustainable products.', ARRAY['Bio','Materials','Climate','Manufacturing'], 2007, 'Tsuruoka', 'Yamagata', 'Unknown', NULL, 'https://spiber.inc/en', 'green', 'Spiber develops bio-based structural protein materials (Brewed Protein™) aimed at enabling more sustainable apparel and industrial applications.'),
+    ('mujin', 'Mujin', '株式会社Mujin', 'Industrial automation company building intelligent robot control for logistics and manufacturing.', ARRAY['Robotics','Manufacturing','Automation','Logistics'], 2011, 'Koto', 'Tokyo', 'Unknown', NULL, 'https://mujin-corp.com/', 'green', 'Mujin develops robotics automation and teachless robot control technologies to improve productivity in logistics and industrial operations.'),
+    ('rapyuta-robotics', 'Rapyuta Robotics', 'ラピュタロボティクス株式会社', 'Warehouse automation company building robotics solutions for logistics operations.', ARRAY['Robotics','Logistics','Automation','Enterprise'], 2014, 'Tokyo', 'Tokyo', 'Unknown', NULL, 'https://www.rapyuta-robotics.com/', 'yellow', 'Rapyuta Robotics develops warehouse automation solutions including pick-assist systems to improve logistics productivity.');
 END;
 $$;

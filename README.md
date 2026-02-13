@@ -141,7 +141,7 @@ Quick start:
 docker compose -f docker-compose.db.yml up -d
 ```
 
-This initializes a `startups` table and seeds approximately 50 sample companies so you can start building features immediately.
+This initializes a `startups` table and seeds 10 curated startup profiles so you can start building features immediately.
 
 To import your own startup data, fill `db/templates/startups.template.csv` and run:
 
