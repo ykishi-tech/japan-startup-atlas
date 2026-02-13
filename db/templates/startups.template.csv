@@ -1,0 +1,3 @@
+slug,name_en,name_jp,one_liner,tags,founded_year,hq_city,hq_prefecture,funding_stage,total_funding_usd_millions,website_url,readiness,description
+sustainable-lab,Sustainable Lab,サステナブル・ラボ株式会社,"Japan-focused ESG data platform for financial institutions and enterprises.","ESG Data|SaaS|Climate|Disclosure|Fintech",2019,Tokyo,Tokyo,Private,,https://en.suslab.net/,yellow,"Provides ESG data collection, analytics, and disclosure workflows tailored to Japanese market needs."
+payzen,PayZen,ペイゼン,"B2B fintech for invoice and payment operations of Japanese exporters.","Fintech|B2B|Payments|SME|Cross-border",2021,Tokyo,Tokyo,Seed,,https://example.com,yellow,"Helps exporters create compliant invoices and reconcile cross-border payments in one system."

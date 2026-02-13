@@ -30,6 +30,44 @@ postgresql://startup_atlas:startup_atlas@localhost:5432/startup_atlas
 docker exec -it japan-startup-atlas-db psql -U startup_atlas -d startup_atlas -c "SELECT COUNT(*) FROM startups;"
 ```
 
+## How to hand off startup data (recommended)
+
+Use CSV and provide one row per company.
+
+1. Copy `db/templates/startups.template.csv` and fill in your data.
+2. Keep the same header columns/order.
+3. Use `|` to separate tags (example: `AI|SaaS|B2B`).
+4. `readiness` must be one of: `green`, `yellow`, `red`.
+
+Required columns:
+
+- `slug`
+- `name_en`
+- `one_liner`
+- `founded_year`
+- `hq_city`
+- `hq_prefecture`
+- `funding_stage`
+- `readiness`
+- `description`
+
+Optional columns:
+
+- `name_jp`
+- `tags`
+- `total_funding_usd_millions`
+- `website_url`
+
+## Import CSV into DB
+
+```bash
+export DATABASE_URL="postgresql://startup_atlas:startup_atlas@localhost:5432/startup_atlas"
+./db/import_startups.sh db/templates/startups.template.csv
+```
+
+- Import is **upsert** by `slug` (insert new, update existing).
+- This lets you safely re-import corrected data.
+
 ## Example search query
 
 ```sql
