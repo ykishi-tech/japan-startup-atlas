@@ -126,6 +126,31 @@ docker build . -t nextjs-starter-shadcn -f Dockerfile.bun
 docker run -p 3000:3000 nextjs-starter-shadcn
 ```
 
+
+## 🗄️ Database (Japan Startup Atlas)
+
+This repository includes a PostgreSQL setup intended for startup profile storage.
+
+- Schema + seed: `db/init.sql`
+- Local DB container: `docker-compose.db.yml`
+- Setup guide: `db/README.md`
+
+Quick start:
+
+```bash
+docker compose -f docker-compose.db.yml up -d
+```
+
+This initializes a `startups` table and seeds 10 curated startup profiles so you can start building features immediately.
+
+To import your own startup data, fill `db/templates/startups.template.csv` and run:
+
+```bash
+export DATABASE_URL="postgresql://startup_atlas:startup_atlas@localhost:5432/startup_atlas"
+./db/import_startups.sh <your-csv-file>
+```
+
+
 ### ☁ Try it in the Cloud
 
 [![Open in VS Code](https://img.shields.io/badge/Open%20in-VS%20Code-blue?logo=visualstudiocode)](https://vscode.dev/github/SiddharthaMaity/nextjs-16-starter-shadcn)
